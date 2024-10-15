@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 function App() {
   const [URL, setURL] = useState("");
   const [listOfURL, setListOfURL] = useState([]);
+  const [generatedURL, setGeneratedURL] = useState("");
 
   async function handleGetAnalytics() {
     try {
@@ -15,13 +16,44 @@ function App() {
     }
   }
 
-  function handleGenerateURL() {}
+  async function handleGenerateURL() {
+    try {
+      const response = await fetch("http://localhost:8000/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          originalURL: URL,
+        }),
+      });
+      const data = await response.json();
+      setGeneratedURL(data?.data?.createdURL?.generatedURL);
+      setURL("");
+      handleGetAnalytics();
+    } catch (error) {
+      setGeneratedURL("");
+      console.log(error);
+    }
+  }
+
+  async function handleDeleteURL(id) {
+    try {
+      const response = await fetch("http://localhost:8000/delete/" + id, {
+        method: "Delete",
+      });
+      const data = await response.json();
+      if (data.success) {
+        handleGetAnalytics();
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   useEffect(() => {
     handleGetAnalytics();
   }, []);
-
-  console.log(URL);
 
   return (
     <div className="p-7 mx-auto">
@@ -32,6 +64,7 @@ function App() {
           type="text"
           name="originalURL"
           id="url"
+          value={URL}
           onChange={(e) => setURL(e.target.value)}
           placeholder="www.example.com"
           className="border-2 border-gray-700 bg-transparent outline-none py-1 px-2"
@@ -42,6 +75,7 @@ function App() {
         >
           Generate URL
         </button>
+        <p>{generatedURL === "" ? "" : generatedURL}</p>
       </div>
       <div className="w-full">
         <h2 className="text-xl pb-10">URL Analytics</h2>
@@ -71,7 +105,10 @@ function App() {
                       {url.visitHistory.length}
                     </td>
                     <td className="border border-gray-300 p-2">
-                      <button className="bg-slate-300 px-7 py-1 text-md text-black">
+                      <button
+                        onClick={() => handleDeleteURL(url._id)}
+                        className="bg-slate-300 px-7 py-1 text-md text-black"
+                      >
                         Delete
                       </button>
                     </td>
